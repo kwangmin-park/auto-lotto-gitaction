@@ -63,21 +63,21 @@ def run(playwright: Playwright) -> None:
         # with page.expect_navigation(url="https://ol.dhlottery.co.kr/olotto/game/game645.do"):
         with page.expect_navigation():
             page.press('form[name="jform"] >> text=로그인', "Enter")
-        time.sleep(4)
+        time.sleep(5)
 
         # 로그인 이후 기본 정보 체크 & 예치금 알림
-        page.goto("https://dhlottery.co.kr/common.do?method=main")
-        money_info = page.query_selector("ul.information").inner_text()
-        money_info: str = money_info.split("\n")
-        user_name = money_info[0]
-        money_info: int = int(money_info[2].replace(",", "").replace("원", ""))
-        # hook_slack(f"로그인 사용자: {user_name}, 예치금: {money_info}")
-
-        # 예치금 잔액 부족 미리 exception
-        if 1000 * int(COUNT) > money_info:
-            raise Exception(
-                "예치금이 부족합니다! \n충전해주세요: https://dhlottery.co.kr/payment.do?method=payment"
-            )
+        # page.goto("https://dhlottery.co.kr/common.do?method=main")
+        # money_info = page.query_selector("ul.information").inner_text()
+        # money_info: str = money_info.split("\n")
+        # user_name = money_info[0]
+        # money_info: int = int(money_info[2].replace(",", "").replace("원", ""))
+        # # hook_slack(f"로그인 사용자: {user_name}, 예치금: {money_info}")
+        #
+        # # 예치금 잔액 부족 미리 exception
+        # if 1000 * int(COUNT) > money_info:
+        #     raise Exception(
+        #         "예치금이 부족합니다! \n충전해주세요: https://dhlottery.co.kr/payment.do?method=payment"
+        #     )
 
         page.goto(url="https://ol.dhlottery.co.kr/olotto/game/game645.do")
         # "비정상적인 방법으로 접속하였습니다. 정상적인 PC 환경에서 접속하여 주시기 바랍니다." 우회하기
@@ -88,6 +88,8 @@ def run(playwright: Playwright) -> None:
 
         page.click("a[id='num4']")
 
+        time.sleep(3)
+
         # page.select_option("select", str(COUNT))  # Select 1
         page.click('#myList input[name="checkNumberMy"]:not(:checked)')
         page.click('#myList input[name="checkNumberMy"]:not(:checked)')
@@ -95,34 +97,19 @@ def run(playwright: Playwright) -> None:
         page.click('#myList input[name="checkNumberMy"]:not(:checked)')
         page.click('#myList input[name="checkNumberMy"]:not(:checked)')
         page.click('input[name="btnMyNumber"]')
-        page.click('input:has-text("구매하기")')  # Click input:has-text("구매하기")
         time.sleep(2)
+
+        # Click input:has-text("구매하기")
+        page.click("input:has-text(\"구매하기\")")
+
+        time.sleep(2)
+        # Click text=확인 취소 >> input[type="button"]
         page.click(
             'text=확인 취소 >> input[type="button"]'
         )  # Click text=확인 취소 >> input[type="button"]
+
+        time.sleep(2)
         page.click('input[name="closeLayer"]')
-        # assert page.url == "https://el.dhlottery.co.kr/game/TotalGame.jsp?LottoId=LO40"
-
-        # hook_slack(
-        #     f"{COUNT}개 복권 구매 성공! \n자세하게 확인하기: https://dhlottery.co.kr/myPage.do?method=notScratchListView"
-        # )
-
-        # 오늘 구매한 복권 결과
-        now_date = __get_now().date().strftime("%Y%m%d")
-        page.goto(
-            url=f"https://dhlottery.co.kr/myPage.do?method=lottoBuyList&searchStartDate={now_date}&searchEndDate={now_date}&lottoId=&nowPage=1"
-        )
-        a_tag_href = page.query_selector(
-            "tbody > tr:nth-child(1) > td:nth-child(4) > a"
-        ).get_attribute("href")
-        detail_info = re.findall(r"\d+", a_tag_href)
-        page.goto(
-            url=f"https://dhlottery.co.kr/myPage.do?method=lotto645Detail&orderNo={detail_info[0]}&barcode={detail_info[1]}&issueNo={detail_info[2]}"
-        )
-        result_msg = ""
-        for result in page.query_selector_all("div.selected li"):
-            result_msg += ", ".join(result.inner_text().split("\n")) + "\n"
-        # hook_slack(f"이번주 나의 행운의 번호는?!\n{result_msg}")
 
         # End of Selenium
         context.close()
